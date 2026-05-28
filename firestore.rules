@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // -------------------------------------------------------------------------
+    // 1. GLOBAL HELPERS
+    // -------------------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    // Admin check: Only the owner's email for now or users in 'admins' collection
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'jassintaatelier@gmail.com' || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function incomingData() {
+      return request.resource.data;
+    }
+
+    function existingData() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. ENTITY VALIDATORS
+    // -------------------------------------------------------------------------
+    
+    function isValidProduct(data) {
+      return data.keys().hasAll(['id', 'sku', 'name', 'category']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.sku is string && data.sku.size() <= 64 &&
+             data.name is string && data.name.size() <= 200 &&
+             (!('normalPrice' in data) || data.normalPrice is number) &&
+             (!('imageUrl' in data) || data.imageUrl is string);
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['id', 'customerName', 'status', 'platform']) &&
+             data.id is string &&
+             data.status in ['Pending', 'Confirmed', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Finished'];
+    }
+
+    function isValidInventory(data) {
+      return data.keys().hasAll(['id', 'productSku', 'date', 'type']) &&
+             data.type in ['Stock In', 'Stock Out', 'Adjustment', 'Return', 'Transfer'];
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. COLLECTION RULES
+    // -------------------------------------------------------------------------
+
+    // Open access for dev/local auth mode
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

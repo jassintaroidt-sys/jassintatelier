@@ -1,0 +1,6 @@
+{
+  "name": "Jassinta Atelier ERP",
+  "description": "Sistem manajemen operasional butik busana wanita terintegrasi dengan asisten AI, pencatatan kas otomatis, pelacakan barcode, dan sistem pergudangan digital pintar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
